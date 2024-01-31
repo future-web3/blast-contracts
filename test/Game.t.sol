@@ -53,7 +53,6 @@ contract GameTest is Test {
         game.addScore(doge, 90);
         vm.stopPrank();
         GameLeaderboard.User memory newFirstUser = _gameLeaderboard.getUser(0);
-        address newFirstRanked = newFirstUser.user;
         uint newFirstScore = newFirstUser.score;
         assertEq(carol, firstRanked);
         assertEq(newFirstScore, 90);
