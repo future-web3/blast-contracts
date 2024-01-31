@@ -13,8 +13,7 @@ enum GasMode {
     CLAIMABLE 
 }
 
-interface IBlast{
-    
+interface IBlast {
     // configure
     function configureContract(address contractAddress, YieldMode _yield, GasMode gasMode, address governor) external;
     function configure(YieldMode _yield, GasMode gasMode, address governor) external;
