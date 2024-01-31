@@ -16,16 +16,6 @@ contract GameTest is Test {
     uint public constant THIRD = 1; // 10% prize goes to 3rd ranked player
     uint public constant OTHERS = 3; // 30% prize goes to other ranked players
 
-    // GameLeaderboard gameLeaderboard = new GameLeaderboard(gameId, gameName);
-    // Game.Round round =
-    //     Game.Round(
-    //         roundLength,
-    //         1,
-    //         block.timestamp + roundLength,
-    //         claimPeriod,
-    //         gameLeaderboard
-    //     );
-
     address public owner = vm.envAddress("DEPLOYER");
     address public alice = vm.envAddress("ALICE");
     address public bob = vm.envAddress("BOB");
