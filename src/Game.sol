@@ -9,12 +9,16 @@ contract Game is Ownable {
     uint public gameId;
     string public gameName;
     Round public round;
-    uint totalReward;
 
     uint public constant FIRST = 4; // 40% prize goes to 1st ranked player
     uint public constant SECOND = 2; // 20% prize goes to 2nd ranked player
     uint public constant THIRD = 1; // 10% prize goes to 3rd ranked player
     uint public constant OTHERS = 3; // 30% prize goes to other ranked players
+
+    uint firstPrize;
+    uint secondPrize;
+    uint thirdPrize;
+    uint sharedPrize;
 
     struct Round {
         uint256 length; // in seconds
@@ -62,10 +66,11 @@ contract Game is Ownable {
 
         if (!round.hasClaimedBySomeone) {
             totalBalance = address(this).balance;
-            totalReward = totalBalance;
+            firstPrize = (totalBalance * FIRST) / 10;
+            secondPrize = (totalBalance * SECOND) / 10;
+            thirdPrize = (totalBalance * THIRD) / 10;
+            sharedPrize = (totalBalance * OTHERS) / (10 * 7);
             round.hasClaimedBySomeone = true;
-        } else {
-            totalBalance = totalReward;
         }
 
         for (uint i = 0; i < leaderBoardLength; i++) {
@@ -81,23 +86,19 @@ contract Game is Ownable {
 
                 if (i == 0) {
                     // 1st player
-                    uint prize = (totalBalance * FIRST) / 10;
-                    (bool sent, ) = msg.sender.call{value: prize}("");
+                    (bool sent, ) = msg.sender.call{value: firstPrize}("");
                     require(sent, "Failed to send Ether");
                 } else if (i == 1) {
                     // 2nd player
-                    uint prize = (totalBalance * SECOND) / 10;
-                    (bool sent, ) = msg.sender.call{value: prize}("");
+                    (bool sent, ) = msg.sender.call{value: secondPrize}("");
                     require(sent, "Failed to send Ether");
                 } else if (i == 2) {
                     // third player
-                    uint prize = (totalBalance * THIRD) / 10;
-                    (bool sent, ) = msg.sender.call{value: prize}("");
+                    (bool sent, ) = msg.sender.call{value: thirdPrize}("");
                     require(sent, "Failed to send Ether");
                 } else {
                     // others
-                    uint prize = (totalBalance * OTHERS) / (10 * 7);
-                    (bool sent, ) = msg.sender.call{value: prize}("");
+                    (bool sent, ) = msg.sender.call{value: sharedPrize}("");
                     require(sent, "Failed to send Ether");
                 }
 
