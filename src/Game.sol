@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameLeaderboard.sol";
+import "./MinimalForwarder.sol";
 
 contract Game is Ownable {
     uint public gameId;
     string public gameName;
     Round public round;
+    MinimalForwarder public minimalForwarder;
 
     uint public constant FIRST = 4; // 40% prize goes to 1st ranked player
     uint public constant SECOND = 2; // 20% prize goes to 2nd ranked player
@@ -33,10 +35,12 @@ contract Game is Ownable {
         uint _gameId,
         string memory _gameName,
         uint _roundLength,
-        uint _claimPeriod
+        uint _claimPeriod,
+        address _minimalForwader
     ) {
         gameId = _gameId;
         gameName = _gameName;
+        minimalForwarder = MinimalForwarder(_minimalForwader);
 
         round = Round({
             length: _roundLength,
@@ -48,7 +52,12 @@ contract Game is Ownable {
         });
     }
 
-    function addScore(address user, uint score) external onlyOwner {
+    modifier onlyTrustedForwarder() {
+        require(msg.sender == address(minimalForwarder));
+        _;
+    }
+
+    function addScore(address user, uint score) external onlyTrustedForwarder {
         require(isGameRunning(), "Game is not running");
 
         GameLeaderboard _gameLeaderBoard = getCurrentGameBoard();
