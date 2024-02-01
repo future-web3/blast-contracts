@@ -53,7 +53,10 @@ contract Game is Ownable {
     }
 
     modifier onlyTrustedForwarder() {
-        require(msg.sender == address(minimalForwarder));
+        require(
+            msg.sender == address(minimalForwarder),
+            "only trusted sender can add score"
+        );
         _;
     }
 

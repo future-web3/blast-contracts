@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Test, console2} from "forge-std/Test.sol";
 import {GameLeaderboard} from "../src/GameLeaderboard.sol";
 import {Game} from "../src/Game.sol";
+import {MinimalForwarder} from "../src/MinimalForwarder.sol";
 
 contract GameTest is Test {
     uint gameId = 1;
@@ -16,22 +17,37 @@ contract GameTest is Test {
     uint public constant THIRD = 1; // 10% prize goes to 3rd ranked player
     uint public constant OTHERS = 3; // 30% prize goes to other ranked players
 
+    MinimalForwarder minimalForwarder = new MinimalForwarder();
+
     address public owner = vm.envAddress("DEPLOYER");
     address public alice = vm.envAddress("ALICE");
     address public bob = vm.envAddress("BOB");
     address public carol = vm.envAddress("CAROL");
     address public doge = vm.envAddress("DOGE");
+    address public _minimalForwarder = address(minimalForwarder);
 
     function test_SetupConstructorCorrectly() public {
-        Game game = new Game(gameId, gameName, roundLength, claimPeriod);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
         Game.Round memory round = game.getCurrentGameRound();
         assertEq(round.length, roundLength);
         assertEq(round.claimPeriod, claimPeriod);
     }
 
     function test_AddScore() public {
-        vm.startPrank(owner);
-        Game game = new Game(gameId, gameName, roundLength, claimPeriod);
+        vm.startPrank(_minimalForwarder);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
         game.addScore(owner, 10);
         game.addScore(alice, 20);
         game.addScore(alice, 30);
@@ -49,20 +65,21 @@ contract GameTest is Test {
         assertEq(carol, firstRanked);
         assertEq(firstScore, 80);
 
-        vm.startPrank(owner);
+        vm.startPrank(_minimalForwarder);
         game.addScore(doge, 90);
         vm.stopPrank();
+
         GameLeaderboard.User memory newFirstUser = _gameLeaderboard.getUser(0);
         uint newFirstScore = newFirstUser.score;
         assertEq(carol, firstRanked);
         assertEq(newFirstScore, 90);
 
-        vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(owner);
+        vm.expectRevert("only trusted sender can add score");
         game.addScore(owner, 100);
         vm.stopPrank();
 
-        vm.startPrank(owner);
+        vm.startPrank(_minimalForwarder);
         game.addScore(owner, 15);
         vm.expectRevert("Score too low");
         game.addScore(owner, 5);
@@ -71,7 +88,13 @@ contract GameTest is Test {
 
     function test_IsGameRunningAndIsGameClaiming() public {
         vm.startPrank(owner);
-        Game game = new Game(gameId, gameName, roundLength, claimPeriod);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
         vm.stopPrank();
 
         assertEq(true, game.isGameRunning());
@@ -109,7 +132,13 @@ contract GameTest is Test {
 
     function test_StartNewGameRound() public {
         vm.startPrank(owner);
-        Game game = new Game(gameId, gameName, roundLength, claimPeriod);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
         vm.stopPrank();
 
         vm.warp(
@@ -141,9 +170,16 @@ contract GameTest is Test {
     }
 
     function test_ClaimReward() public {
-        vm.startPrank(owner);
-        Game game = new Game(gameId, gameName, roundLength, claimPeriod);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
         vm.deal(address(game), 100 ether);
+
+        vm.startPrank(_minimalForwarder);
         console2.log("balance", address(game).balance);
         game.addScore(alice, 10);
         game.addScore(alice, 20);
