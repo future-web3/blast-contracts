@@ -60,6 +60,28 @@ contract Game is Ownable {
         _;
     }
 
+    function updateGamePeriodAndEndTime(uint length) external onlyOwner {
+        round = Round({
+            length: length,
+            gameRound: round.gameRound,
+            end: block.timestamp + length,
+            claimPeriod: round.claimPeriod,
+            gameLeaderBoard: getCurrentGameBoard(),
+            hasClaimedBySomeone: false
+        });
+    }
+
+    function updateClaimPeriod(uint newClaimPeriod) external onlyOwner {
+        round = Round({
+            length: round.length,
+            gameRound: round.gameRound,
+            end: round.end,
+            claimPeriod: newClaimPeriod,
+            gameLeaderBoard: getCurrentGameBoard(),
+            hasClaimedBySomeone: false
+        });
+    }
+
     function addScore(address user, uint score) external onlyTrustedForwarder {
         require(isGameRunning(), "Game is not running");
 
@@ -173,4 +195,12 @@ contract Game is Ownable {
             hasClaimedBySomeone: false
         });
     }
+
+    function withdrawAll() public payable onlyOwner {
+        require(payable(msg.sender).send(address(this).balance));
+    }
+
+    receive() external payable {}
+
+    fallback() external payable {}
 }

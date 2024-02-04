@@ -8,12 +8,14 @@ contract GameScript is Script {
     function run() public {
         vm.startBroadcast();
 
+        address _minimalForwarder = 0xB6A87320DE35F2bEFE2258162360daa3de11C788;
+
         Game game = new Game(
             0,
             "escapeFromGerms",
             604800,
             86400,
-            0x777BEeF85E717Ab18e44cd054B1a1E33a4A93b83
+            _minimalForwarder
         );
 
         vm.stopBroadcast();

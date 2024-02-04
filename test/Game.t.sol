@@ -170,6 +170,7 @@ contract GameTest is Test {
     }
 
     function test_ClaimReward() public {
+        vm.startPrank(owner);
         Game game = new Game(
             gameId,
             gameName,
@@ -177,6 +178,8 @@ contract GameTest is Test {
             claimPeriod,
             _minimalForwarder
         );
+        vm.stopPrank();
+
         vm.deal(address(game), 100 ether);
 
         vm.startPrank(_minimalForwarder);
@@ -240,5 +243,52 @@ contract GameTest is Test {
         uint prizeAlice = address(alice).balance;
         uint expectedPrizeAlice = (6 * (100 ether * OTHERS)) / 70;
         assertLe(expectedPrizeAlice - prizeAlice, 100);
+    }
+
+    function test_updateTime() public {
+        vm.startPrank(owner);
+        Game game = new Game(
+            gameId,
+            gameName,
+            roundLength,
+            claimPeriod,
+            _minimalForwarder
+        );
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        vm.expectRevert("Ownable: caller is not the owner");
+        game.updateGamePeriodAndEndTime(600);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        game.updateClaimPeriod(600);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        game.updateGamePeriodAndEndTime(600);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 600);
+
+        vm.startPrank(_minimalForwarder);
+        vm.expectRevert("Game is not running");
+        game.addScore(owner, 10);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + claimPeriod + 1);
+
+        vm.startPrank(owner);
+        game.startNewGameRound();
+        assertEq(true, game.isGameRunning());
+        assertEq(false, game.isClaiming());
+        game.updateClaimPeriod(180);
+        console2.log(game.getCurrentGameRound().length);
+        vm.warp(block.timestamp + 600 + 130);
+        assertEq(true, game.isClaiming());
+        vm.warp(block.timestamp + 190);
+        assertEq(false, game.isClaiming());
+        vm.stopPrank();
     }
 }
