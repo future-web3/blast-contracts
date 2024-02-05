@@ -10,13 +10,7 @@ contract GameScript is Script {
 
         address _minimalForwarder = 0xB6A87320DE35F2bEFE2258162360daa3de11C788;
 
-        Game game = new Game(
-            0,
-            "escapeFromGerms",
-            604800,
-            86400,
-            _minimalForwarder
-        );
+        Game game = new Game(3, "emojiMatch", 604800, 86400, _minimalForwarder);
 
         vm.stopBroadcast();
     }

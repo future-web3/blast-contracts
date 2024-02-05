@@ -31,6 +31,15 @@ contract Game is Ownable {
         bool hasClaimedBySomeone;
     }
 
+    event ScoreUpdated(
+        Round round,
+        uint gameId,
+        string gameName,
+        GameLeaderboard.User[] gameLeaderboardInfo,
+        address user,
+        uint score
+    );
+
     constructor(
         uint _gameId,
         string memory _gameName,
@@ -87,6 +96,18 @@ contract Game is Ownable {
 
         GameLeaderboard _gameLeaderBoard = getCurrentGameBoard();
         _gameLeaderBoard.addScore(user, score);
+
+        GameLeaderboard.User[] memory _gameLeaderboardInfo = _gameLeaderBoard
+            .getLeaderBoardInfo();
+
+        emit ScoreUpdated(
+            round,
+            gameId,
+            gameName,
+            _gameLeaderboardInfo,
+            user,
+            score
+        );
     }
 
     function claimReward() external {
