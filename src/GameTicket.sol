@@ -27,6 +27,9 @@ contract GameTicket is ERC1155Burnable, Ownable {
 
     uint256 public prizePool = 0;
 
+    mapping(address => uint256) public gameTotalSales;
+    address[] public gameAddresses;
+
     event Redeem(
         address indexed _from,
         uint _id,
@@ -45,7 +48,11 @@ contract GameTicket is ERC1155Burnable, Ownable {
         BLAST_YIELD.configureGovernor(msg.sender);
     }
 
-    function buyTicket(uint8 _ticketType, uint8 _number) external payable {
+    function buyTicket(
+        address gameAddress,
+        uint8 _ticketType,
+        uint8 _number
+    ) external payable {
         require(
             _number >= 1 && _number < 256,
             "You can purchase up to 256 tickets"
@@ -61,6 +68,14 @@ contract GameTicket is ERC1155Burnable, Ownable {
             msg.value >= _number * getTicketPrice(_ticketType),
             "You dont have enough funds"
         );
+
+        if (!addressExists(gameAddress)) {
+            gameAddresses.push(gameAddress);
+            gameTotalSales[gameAddress] = 0;
+        }
+
+        gameTotalSales[gameAddress] += msg.value;
+
         _mint(msg.sender, _ticketType, _number, "");
     }
 
@@ -107,6 +122,15 @@ contract GameTicket is ERC1155Burnable, Ownable {
         return 0;
     }
 
+    function addressExists(address gameAddress) private view returns (bool) {
+        for (uint256 i = 0; i < gameAddresses.length; i++) {
+            if (gameAddresses[i] == gameAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function withdrawAll() public payable onlyOwner {
         require(payable(msg.sender).send(address(this).balance));
     }
@@ -124,7 +148,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         BLAST_YIELD.claimAllGas(address(this), recipient);
     }
 
-    function updatePrizePool() public onlyOwner {
+    function updatePrizePoolAndDistribute() public onlyOwner {
         uint256 gasClaimed = BLAST_YIELD.claimAllGas(
             address(this),
             address(this)
@@ -133,6 +157,25 @@ contract GameTicket is ERC1155Burnable, Ownable {
             address(this),
             address(this)
         );
-        prizePool += gasClaimed + yieldClaimed;
+        uint256 totalClaimed = gasClaimed + yieldClaimed;
+
+        // calculate total sales
+        uint256 totalSales = 0;
+        for (uint256 i = 0; i < gameAddresses.length; i++) {
+            totalSales += gameTotalSales[gameAddresses[i]];
+        }
+
+        require(totalSales > 0, "No ticket sales");
+
+        // distibute prize based on game total sales
+        for (uint256 i = 0; i < gameAddresses.length; i++) {
+            address gameAddress = gameAddresses[i];
+            uint256 sales = gameTotalSales[gameAddress];
+            if (sales > 0) {
+                uint256 fundsToDistribute = (totalClaimed * sales) / totalSales;
+                (bool sent, ) = gameAddress.call{value: fundsToDistribute}("");
+                require(sent, "Failed to send Ether");
+            }
+        }
     }
 }
