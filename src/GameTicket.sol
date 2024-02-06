@@ -25,6 +25,8 @@ contract GameTicket is ERC1155Burnable, Ownable {
     IERC20Rebasing public constant WETH =
         IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
+    uint256 public prizePool = 0;
+
     event Redeem(
         address indexed _from,
         uint _id,
@@ -120,5 +122,17 @@ contract GameTicket is ERC1155Burnable, Ownable {
 
     function claimAllGas(address recipient) external {
         BLAST_YIELD.claimAllGas(address(this), recipient);
+    }
+
+    function updatePrizePool() public onlyOwner {
+        uint256 gasClaimed = BLAST_YIELD.claimAllGas(
+            address(this),
+            address(this)
+        );
+        uint256 yieldClaimed = BLAST_YIELD.claimAllYield(
+            address(this),
+            address(this)
+        );
+        prizePool += gasClaimed + yieldClaimed;
     }
 }
