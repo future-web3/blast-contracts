@@ -5,18 +5,24 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameLeaderboard.sol";
 import "./MinimalForwarder.sol";
+import "./GameTicket.sol";
 
 contract Game is Ownable {
     uint public gameId;
     string public gameName;
+    GameTicket public gameTicket;
     Round public round;
     MinimalForwarder public minimalForwarder;
+    address public gameDev;
 
-    uint public constant FIRST = 4; // 40% prize goes to 1st ranked player
+    uint public constant PLATFORM_SHARE = 0; // We are not apple store. We give away 100% to the community to start with.
+    uint public constant GAME_DEV_SHARE = 1; // This can be configured later.
+    uint public constant FIRST = 3; // 30% prize goes to 1st ranked player
     uint public constant SECOND = 2; // 20% prize goes to 2nd ranked player
     uint public constant THIRD = 1; // 10% prize goes to 3rd ranked player
     uint public constant OTHERS = 3; // 30% prize goes to other ranked players
 
+    uint gameDevPrize;
     uint firstPrize;
     uint secondPrize;
     uint thirdPrize;
@@ -29,6 +35,7 @@ contract Game is Ownable {
         uint claimPeriod; // the time period the players can claim reward
         GameLeaderboard gameLeaderBoard;
         bool hasClaimedBySomeone;
+        uint rewardPool;
     }
 
     constructor(
@@ -36,11 +43,15 @@ contract Game is Ownable {
         string memory _gameName,
         uint _roundLength,
         uint _claimPeriod,
-        address _minimalForwader
+        address _minimalForwader,
+        address _gameTicket,
+        address _gameDev
     ) {
         gameId = _gameId;
         gameName = _gameName;
         minimalForwarder = MinimalForwarder(_minimalForwader);
+        gameTicket = GameTicket(_gameTicket);
+        gameDev = _gameDev;
 
         round = Round({
             length: _roundLength,
@@ -48,7 +59,8 @@ contract Game is Ownable {
             end: block.timestamp + _roundLength,
             claimPeriod: _claimPeriod,
             gameLeaderBoard: new GameLeaderboard(_gameId, _gameName),
-            hasClaimedBySomeone: false
+            hasClaimedBySomeone: false,
+            rewardPool: address(this).balance
         });
     }
 
@@ -75,10 +87,13 @@ contract Game is Ownable {
 
         if (!round.hasClaimedBySomeone) {
             totalBalance = address(this).balance;
+            gameDevPrize = (totalBalance * GAME_DEV_SHARE) / 10;
             firstPrize = (totalBalance * FIRST) / 10;
             secondPrize = (totalBalance * SECOND) / 10;
             thirdPrize = (totalBalance * THIRD) / 10;
             sharedPrize = (totalBalance * OTHERS) / (10 * 7);
+            (bool sent, ) = gameDev.call{value: gameDevPrize}(""); // send to gamedev money
+            require(sent, "Failed to send Ether");
             round.hasClaimedBySomeone = true;
         }
 
@@ -167,7 +182,31 @@ contract Game is Ownable {
             end: block.timestamp + round.length,
             claimPeriod: round.claimPeriod,
             gameLeaderBoard: new GameLeaderboard(gameId, gameName),
-            hasClaimedBySomeone: false
+            hasClaimedBySomeone: false,
+            rewardPool: address(this).balance
+
         });
     }
+
+    function redeemTicket(uint8 _ticketType) external returns (uint8) {
+        require(_ticketType == gameTicket.BRONZE() || _ticketType == gameTicket.SILVER() || _ticketType == gameTicket.GOLD(), 'The ticket type is wrong!');
+        require(gameTicket.balanceOf(msg.sender, _ticketType) >= 1, "You dont own the ticket");
+
+        gameTicket.burn(msg.sender, _ticketType, 1);
+        uint ticketPrice = gameTicket.getTicketPrice(_ticketType);
+        round.rewardPool += ticketPrice;
+
+        (bool success, ) = address(gameTicket).call{value: 0, gas: 5000}(
+            abi.encodeWithSignature("sendPrize(uint256)", _ticketType)
+        );
+        require(success, "Failed to send Ether");
+
+
+        return _ticketType;
+    }
+
+    receive() external payable {
+        
+    }
+
 }
