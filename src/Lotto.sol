@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "entropy_sdk/IEntropy.sol";
 
 // https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/examples/coin_flip/contract/src/CoinFlip.sol
 
@@ -16,12 +17,15 @@ contract Lotto is Ownable {
 
     IEntropy public entropy =  IEntropy(ENTROPY);
 
-    function getRandomness() external retursn(uint256) {
+    function getRandomness( address _provider,
+            uint64 _sequenceNumber,
+            bytes32 _randomNumber,
+            bytes32 _providerRandomNumber) external returns(uint256) {
         bytes32 randomNumber = entropy.reveal(
-            provider,
-            sequenceNumber,
-            randomNumber,
-            providerRandomNumber
+            _provider,
+            _sequenceNumber,
+            _randomNumber,
+            _providerRandomNumber
         );
 
         return uint256(randomNumber);
