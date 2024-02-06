@@ -25,9 +25,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
     IERC20Rebasing public constant WETH =
         IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
-    uint256 public prizePool = 0;
-
-    mapping(address => uint256) public gameTotalSales;
+    mapping(address => uint256) public gamePopularity;
     address[] public gameAddresses;
 
     event Redeem(
@@ -48,11 +46,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         BLAST_YIELD.configureGovernor(msg.sender);
     }
 
-    function buyTicket(
-        address gameAddress,
-        uint8 _ticketType,
-        uint8 _number
-    ) external payable {
+    function buyTicket(uint8 _ticketType, uint8 _number) external payable {
         require(
             _number >= 1 && _number < 256,
             "You can purchase up to 256 tickets"
@@ -69,17 +63,13 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "You dont have enough funds"
         );
 
-        if (!addressExists(gameAddress)) {
-            gameAddresses.push(gameAddress);
-            gameTotalSales[gameAddress] = 0;
-        }
-
-        gameTotalSales[gameAddress] += msg.value;
-
         _mint(msg.sender, _ticketType, _number, "");
     }
 
-    function redeemTicket(uint8 _ticketType) external returns (uint8) {
+    function redeemTicket(
+        uint8 _ticketType,
+        address gameAddress
+    ) external returns (uint8) {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
@@ -87,6 +77,13 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "The ticket type is wrong!"
         );
         burn(msg.sender, _ticketType, 1);
+
+        if (!addressExists(gameAddress)) {
+            gameAddresses.push(gameAddress);
+            gamePopularity[gameAddress] = 0;
+        }
+
+        gamePopularity[gameAddress] += _ticketType;
 
         emit Redeem(msg.sender, _ticketType, 1, getNumberOfLives(_ticketType));
         return getNumberOfLives(_ticketType);
@@ -159,23 +156,35 @@ contract GameTicket is ERC1155Burnable, Ownable {
         );
         uint256 totalClaimed = gasClaimed + yieldClaimed;
 
-        // calculate total sales
-        uint256 totalSales = 0;
+        uint256 totalPopularity = 0;
         for (uint256 i = 0; i < gameAddresses.length; i++) {
-            totalSales += gameTotalSales[gameAddresses[i]];
+            totalPopularity += gamePopularity[gameAddresses[i]];
         }
 
-        require(totalSales > 0, "No ticket sales");
+        require(totalPopularity > 0, "No ticket sales");
 
-        // distibute prize based on game total sales
         for (uint256 i = 0; i < gameAddresses.length; i++) {
             address gameAddress = gameAddresses[i];
-            uint256 sales = gameTotalSales[gameAddress];
-            if (sales > 0) {
-                uint256 fundsToDistribute = (totalClaimed * sales) / totalSales;
-                (bool sent, ) = gameAddress.call{value: fundsToDistribute}("");
-                require(sent, "Failed to send Ether");
+            uint256 popularity = gamePopularity[gameAddress];
+            if (popularity > 0) {
+                uint256 fundsToDistribute = (totalClaimed * popularity) /
+                    totalPopularity;
+                if (fundsToDistribute > 0) {
+                    (bool sent, ) = gameAddress.call{value: fundsToDistribute}(
+                        ""
+                    );
+                    require(sent, "Failed to send Ether");
+                }
             }
         }
+    }
+
+    function getGamePopularity(
+        address gameAddress
+    ) public view onlyOwner returns (uint256) {
+        if (addressExists(gameAddress)) {
+            return gamePopularity[gameAddress];
+        }
+        return 0;
     }
 }
