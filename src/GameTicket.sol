@@ -19,12 +19,12 @@ contract GameTicket is ERC1155Burnable, Ownable {
     uint256 public ticketPrice = 0.1 ether;
     address[] public verifiedGames;
 
-    IBlast public constant BLAST_YIELD =
-        IBlast(0x4300000000000000000000000000000000000002);
-    IERC20Rebasing public constant USDB =
-        IERC20Rebasing(0x4200000000000000000000000000000000000022);
-    IERC20Rebasing public constant WETH =
-        IERC20Rebasing(0x4200000000000000000000000000000000000023);
+    // IBlast public constant BLAST_YIELD =
+    //     IBlast(0x4300000000000000000000000000000000000002);
+    // IERC20Rebasing public constant USDB =
+    //     IERC20Rebasing(0x4200000000000000000000000000000000000022);
+    // IERC20Rebasing public constant WETH =
+    //     IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
     uint256 public prizePool = 0;
 
@@ -42,8 +42,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
     {
         // BLAST_YIELD.configureClaimableGas(); // Gas is claimable
         // BLAST_YIELD.configureClaimableYield();
-
-        BLAST_YIELD.configureGovernor(msg.sender);
+        // BLAST_YIELD.configureGovernor(msg.sender);
     }
 
     modifier onlyVerifiedGames() {
@@ -136,11 +135,14 @@ contract GameTicket is ERC1155Burnable, Ownable {
         return 0;
     }
 
-    function sendPrize(uint256 _ticketType) external onlyVerifiedGames {
-        uint ticketPrize = getTicketPrice(_ticketType);
+    function sendPrize(
+        uint256 _ticketType,
+        address payable recipient
+    ) external onlyVerifiedGames {
         // the platform probably needs to keep some money
         // the game deverloper probably needs to keep some money
-        (bool sent, ) = msg.sender.call{value: ticketPrize}("");
+        uint ticketPrize = getTicketPrice(_ticketType);
+        (bool sent, ) = recipient.call{value: ticketPrize}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -148,28 +150,28 @@ contract GameTicket is ERC1155Burnable, Ownable {
         require(payable(msg.sender).send(address(this).balance));
     }
 
-    function claimYield(address recipient, uint256 amount) external {
-        //This function is public meaning anyone can claim the yield
-        BLAST_YIELD.claimYield(address(this), recipient, amount);
-    }
+    // function claimYield(address recipient, uint256 amount) external {
+    //     //This function is public meaning anyone can claim the yield
+    //     BLAST_YIELD.claimYield(address(this), recipient, amount);
+    // }
 
-    function claimAllYield(address recipient) external {
-        BLAST_YIELD.claimAllYield(address(this), recipient);
-    }
+    // function claimAllYield(address recipient) external {
+    //     BLAST_YIELD.claimAllYield(address(this), recipient);
+    // }
 
-    function claimAllGas(address recipient) external {
-        BLAST_YIELD.claimAllGas(address(this), recipient);
-    }
+    // function claimAllGas(address recipient) external {
+    //     BLAST_YIELD.claimAllGas(address(this), recipient);
+    // }
 
-    function updatePrizePool() public onlyOwner {
-        uint256 gasClaimed = BLAST_YIELD.claimAllGas(
-            address(this),
-            address(this)
-        );
-        uint256 yieldClaimed = BLAST_YIELD.claimAllYield(
-            address(this),
-            address(this)
-        );
-        prizePool += gasClaimed + yieldClaimed;
-    }
+    // function updatePrizePool() public onlyOwner {
+    //     uint256 gasClaimed = BLAST_YIELD.claimAllGas(
+    //         address(this),
+    //         address(this)
+    //     );
+    //     uint256 yieldClaimed = BLAST_YIELD.claimAllYield(
+    //         address(this),
+    //         address(this)
+    //     );
+    //     prizePool += gasClaimed + yieldClaimed;
+    // }
 }

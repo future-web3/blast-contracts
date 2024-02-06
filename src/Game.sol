@@ -60,6 +60,7 @@ contract Game is Ownable {
         gameName = _gameName;
         minimalForwarder = MinimalForwarder(_minimalForwader);
         gameTicket = GameTicket(_gameTicket);
+
         gameDev = _gameDev;
 
         round = Round({
@@ -244,17 +245,15 @@ contract Game is Ownable {
         );
         require(
             gameTicket.balanceOf(msg.sender, _ticketType) >= 1,
-            "You dont own the ticket"
+            "You don't own the ticket"
         );
 
+        //need to setApprovalForAll or override burn function
         gameTicket.burn(msg.sender, _ticketType, 1);
         uint ticketPrice = gameTicket.getTicketPrice(_ticketType);
         round.rewardPool += ticketPrice;
 
-        (bool success, ) = address(gameTicket).call{value: 0, gas: 5000}(
-            abi.encodeWithSignature("sendPrize(uint256)", _ticketType)
-        );
-        require(success, "Failed to send Ether");
+        gameTicket.sendPrize(_ticketType, payable(address(this)));
 
         return _ticketType;
     }
