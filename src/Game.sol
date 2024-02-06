@@ -38,6 +38,15 @@ contract Game is Ownable {
         uint rewardPool;
     }
 
+    event ScoreUpdated(
+        Round round,
+        uint gameId,
+        string gameName,
+        GameLeaderboard.User[] gameLeaderboardInfo,
+        address user,
+        uint score
+    );
+
     constructor(
         uint _gameId,
         string memory _gameName,
@@ -65,8 +74,35 @@ contract Game is Ownable {
     }
 
     modifier onlyTrustedForwarder() {
-        require(msg.sender == address(minimalForwarder));
+        require(
+            msg.sender == address(minimalForwarder),
+            "only trusted sender can add score"
+        );
         _;
+    }
+
+    function updateGamePeriodAndEndTime(uint length) external onlyOwner {
+        round = Round({
+            length: length,
+            gameRound: round.gameRound,
+            end: block.timestamp + length,
+            claimPeriod: round.claimPeriod,
+            gameLeaderBoard: getCurrentGameBoard(),
+            hasClaimedBySomeone: false,
+            rewardPool: address(this).balance
+        });
+    }
+
+    function updateClaimPeriod(uint newClaimPeriod) external onlyOwner {
+        round = Round({
+            length: round.length,
+            gameRound: round.gameRound,
+            end: round.end,
+            claimPeriod: newClaimPeriod,
+            gameLeaderBoard: getCurrentGameBoard(),
+            hasClaimedBySomeone: false,
+            rewardPool: address(this).balance
+        });
     }
 
     function addScore(address user, uint score) external onlyTrustedForwarder {
@@ -74,6 +110,18 @@ contract Game is Ownable {
 
         GameLeaderboard _gameLeaderBoard = getCurrentGameBoard();
         _gameLeaderBoard.addScore(user, score);
+
+        GameLeaderboard.User[] memory _gameLeaderboardInfo = _gameLeaderBoard
+            .getLeaderBoardInfo();
+
+        emit ScoreUpdated(
+            round,
+            gameId,
+            gameName,
+            _gameLeaderboardInfo,
+            user,
+            score
+        );
     }
 
     function claimReward() external {
@@ -184,13 +232,20 @@ contract Game is Ownable {
             gameLeaderBoard: new GameLeaderboard(gameId, gameName),
             hasClaimedBySomeone: false,
             rewardPool: address(this).balance
-
         });
     }
 
     function redeemTicket(uint8 _ticketType) external returns (uint8) {
-        require(_ticketType == gameTicket.BRONZE() || _ticketType == gameTicket.SILVER() || _ticketType == gameTicket.GOLD(), 'The ticket type is wrong!');
-        require(gameTicket.balanceOf(msg.sender, _ticketType) >= 1, "You dont own the ticket");
+        require(
+            _ticketType == gameTicket.BRONZE() ||
+                _ticketType == gameTicket.SILVER() ||
+                _ticketType == gameTicket.GOLD(),
+            "The ticket type is wrong!"
+        );
+        require(
+            gameTicket.balanceOf(msg.sender, _ticketType) >= 1,
+            "You dont own the ticket"
+        );
 
         gameTicket.burn(msg.sender, _ticketType, 1);
         uint ticketPrice = gameTicket.getTicketPrice(_ticketType);
@@ -201,12 +256,8 @@ contract Game is Ownable {
         );
         require(success, "Failed to send Ether");
 
-
         return _ticketType;
     }
 
-    receive() external payable {
-        
-    }
-
+    receive() external payable {}
 }
