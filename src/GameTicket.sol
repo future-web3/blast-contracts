@@ -17,6 +17,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
     uint256 public constant GOLD = 3;
 
     uint256 public ticketPrice = 0.1 ether;
+    address[] public verifiedGames;
 
     IBlast public constant BLAST_YIELD =
         IBlast(0x4300000000000000000000000000000000000002);
@@ -45,6 +46,34 @@ contract GameTicket is ERC1155Burnable, Ownable {
         BLAST_YIELD.configureGovernor(msg.sender);
     }
 
+    modifier onlyVerifiedGames() {
+        bool verified = false;
+        for (uint i = 0; i < verifiedGames.length; i++) {
+            if (verifiedGames[i] == msg.sender) {
+                verified = true;
+                break;
+            }
+        }
+
+        require(verified, "This is not a verified game!");
+        _;
+    }
+
+    function addVerifiedGame(address gameAddress) external onlyOwner {
+        require(gameAddress != address(0), "");
+        verifiedGames.push(gameAddress);
+    }
+
+    function deleteVerifiedGame(address gameAddress) external onlyOwner {
+        require(gameAddress != address(0), "");
+        for (uint index = 0; index < verifiedGames.length; index++) {
+            if (verifiedGames[index] == gameAddress) {
+                delete verifiedGames[index];
+                break;
+            }
+        }
+    }
+
     function buyTicket(uint8 _ticketType, uint8 _number) external payable {
         require(
             _number >= 1 && _number < 256,
@@ -64,7 +93,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         _mint(msg.sender, _ticketType, _number, "");
     }
 
-    function redeemTicket(uint8 _ticketType) external returns (uint8) {
+    function redeemTicket(uint256 _ticketType) external returns (uint8) {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
@@ -77,7 +106,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         return getNumberOfLives(_ticketType);
     }
 
-    function getTicketPrice(uint8 _ticketType) public view returns (uint) {
+    function getTicketPrice(uint256 _ticketType) public view returns (uint) {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
@@ -88,7 +117,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         return _ticketType * ticketPrice;
     }
 
-    function getNumberOfLives(uint8 _ticketType) public pure returns (uint8) {
+    function getNumberOfLives(uint256 _ticketType) public pure returns (uint8) {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
@@ -105,6 +134,14 @@ contract GameTicket is ERC1155Burnable, Ownable {
         }
 
         return 0;
+    }
+
+    function sendPrize(uint256 _ticketType) external onlyVerifiedGames {
+        uint ticketPrize = getTicketPrice(_ticketType);
+        // the platform probably needs to keep some money
+        // the game deverloper probably needs to keep some money
+        (bool sent, ) = msg.sender.call{value: ticketPrize}("");
+        require(sent, "Failed to send Ether");
     }
 
     function withdrawAll() public payable onlyOwner {

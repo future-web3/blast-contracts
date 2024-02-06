@@ -9,6 +9,7 @@ out/
 broadcast/Game.s.sol/*
 broadcast/GameTicket.s.sol/*
 broadcast/MinimalForwarder.s.sol/*
+broadcast/Lotto.s.sol/*
 
 # Docs
 docs/
