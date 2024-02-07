@@ -43,8 +43,11 @@ contract GameTicket is ERC1155Burnable, Ownable {
         // BLAST_YIELD.configureAutomaticYield();
         // BLAST_YIELD.configureClaimableGas(); // Gas is claimable
         // BLAST_YIELD.configureGovernor(msg.sender);
-
-        BLAST_YIELD.configure(YieldMode.CLAIMABLE, GasMode.CLAIMABLE, msg.sender);
+        // BLAST_YIELD.configure(
+        //     YieldMode.CLAIMABLE,
+        //     GasMode.CLAIMABLE,
+        //     msg.sender
+        // );
     }
 
     modifier onlyVerifiedGames() {
