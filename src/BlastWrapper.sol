@@ -1,9 +1,11 @@
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./IBlast.sol";
 import "./IERC20Rebasing.sol";
 
-contract BlastWrapper {
+contract BlastWrapper is Ownable {
     IBlast public constant BLAST_YIELD =
         IBlast(0x4300000000000000000000000000000000000002);
     IERC20Rebasing public constant USDB =
@@ -179,5 +181,11 @@ contract BlastWrapper {
         )
     {
         BLAST_YIELD.readGasParams(contractAddress);
+    }
+
+    receive() external payable {}
+
+    function withdrawAll() public payable onlyOwner {
+        require(payable(msg.sender).send(address(this).balance));
     }
 }
