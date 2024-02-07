@@ -8,12 +8,14 @@ import "./entropy_sdk/IEntropy.sol";
 // https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/examples/coin_flip/contract/src/CoinFlip.sol
 
 contract Lotto is Ownable {
-    address[] punters;
-
     address public constant ENTROPY =
         0x98046Bd286715D3B0BC227Dd7a956b83D8978603;
     address public constant ENTROPY_DEFAULT_PROVIDER =
         0x6CC14824Ea2918f5De5C2f75A9Da968ad4BD6344;
+
+    address[] participants;
+    GameTicket public gameTicket;
+    address public lastWinner;
 
     IEntropy public entropy = IEntropy(ENTROPY);
 
@@ -21,12 +23,28 @@ contract Lotto is Ownable {
     mapping(address => uint256) private userToSequenceNumber;
     mapping(address => uint256) private userToFinalRandomNumber;
 
-    uint256 winningNumber = 50;
-    uint256 numberRange = 100;
-
     event RandomnessRequested(uint64 sequenceNumber, address requester);
     event RandomnessRevealed(uint256 randomNumber, address revealer);
-    event Winner(uint256 winningNumber, address winner);
+    event Winner(address indexed winner, uint amount);
+
+
+    constructor(address _gameTicket) {
+        gameTicket = GameTicket(_gameTicket);
+    }
+
+    function participate(uint noOfTickets) external {
+        require(
+            gameTicket.balanceOf(msg.sender, gameTicket.LOTTO_TICKET()) >= noOfTickets,
+            "You don't own the ticket"
+        );
+
+        gameTicket.burn(msg.sender, gameTicket.LOTTO_TICKET(), noOfTickets);
+
+        for (uint i = 0; i < noOfTickets; i++) {
+            participants.push(msg.sender);
+        }
+
+    }
 
     function revealResult(
         uint64 _sequenceNumber,
@@ -39,19 +57,28 @@ contract Lotto is Ownable {
             _randomNumber,
             _providerRandomNumber
         );
-        delete requestedFlips[_sequenceNumber];
 
-        uint256 finalRandomNumber = uint256(randomNumber) % numberRange;
+        uint length = participants.length;
 
-        userToFinalRandomNumber[msg.sender] = finalRandomNumber;
+        uint winningAmount = address(this).balance;
+        require(winningAmount > 0.1 ether, "There is not enough prize.");
+        require(length > 100, "There is not enough participants yet");
 
-        if (finalRandomNumber == winningNumber) {
-            emit Winner(finalRandomNumber, msg.sender);
+        uint256 participantIdx = uint256(randomNumber) % length;
+
+        lastWinner = participants[participantIdx];
+        require(lastWinner != address(0), "No winner found");
+
+        if (participantIdx != length-1) {
+            participants[participantIdx] = participants[length - 1];            
         }
+        
+        participants.pop();
 
-        emit RandomnessRevealed(finalRandomNumber, msg.sender);
-
-        return (finalRandomNumber, winningNumber);
+        (bool success, ) = lastWinner.call{value: winningAmount}("");
+        require(success, "Failed to send Ether");
+        emit Winner(lastWinner, winningAmount);
+        emit RandomnessRevealed(participantIdx, msg.sender);
     }
 
     function requestRandomness(
