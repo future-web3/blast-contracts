@@ -77,10 +77,13 @@ contract Lotto is Ownable {
         return userToSequenceNumber[user];
     }
 
-    function getFinalRandomNumberByUser(
+    function getFinalResultsByUser(
         address user
-    ) public view returns (uint256) {
-        return userToFinalRandomNumber[user];
+    ) public view returns (uint256, bool) {
+        return (
+            userToFinalRandomNumber[user],
+            userToFinalRandomNumber[user] == winningNumber
+        );
     }
 
     function getFee() public view returns (uint256 fee) {

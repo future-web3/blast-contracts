@@ -19,12 +19,12 @@ contract GameTicket is ERC1155Burnable, Ownable {
     uint256 public ticketPrice = 0.1 ether;
     address[] public verifiedGames;
 
-    // IBlast public constant BLAST_YIELD =
-    //     IBlast(0x4300000000000000000000000000000000000002);
-    // IERC20Rebasing public constant USDB =
-    //     IERC20Rebasing(0x4200000000000000000000000000000000000022);
-    // IERC20Rebasing public constant WETH =
-    //     IERC20Rebasing(0x4200000000000000000000000000000000000023);
+    IBlast public constant BLAST_YIELD =
+        IBlast(0x4300000000000000000000000000000000000002);
+    IERC20Rebasing public constant USDB =
+        IERC20Rebasing(0x4200000000000000000000000000000000000022);
+    IERC20Rebasing public constant WETH =
+        IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
     uint256 public prizePool = 0;
 
@@ -40,9 +40,9 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "https://cryptoleek-team.github.io/data-data/flappybird/tickets/1.json"
         )
     {
-        // BLAST_YIELD.configureClaimableGas(); // Gas is claimable
-        // BLAST_YIELD.configureClaimableYield();
-        // BLAST_YIELD.configureGovernor(msg.sender);
+        BLAST_YIELD.configureClaimableGas(); // Gas is claimable
+        BLAST_YIELD.configureClaimableYield();
+        BLAST_YIELD.configureGovernor(msg.sender);
     }
 
     modifier onlyVerifiedGames() {
