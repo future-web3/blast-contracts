@@ -40,9 +40,11 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "https://cryptoleek-team.github.io/data-data/flappybird/tickets/1.json"
         )
     {
-        BLAST_YIELD.configureClaimableGas(); // Gas is claimable
-        BLAST_YIELD.configureClaimableYield();
-        BLAST_YIELD.configureGovernor(msg.sender);
+        // BLAST_YIELD.configureAutomaticYield();
+        // BLAST_YIELD.configureClaimableGas(); // Gas is claimable
+        // BLAST_YIELD.configureGovernor(msg.sender);
+
+        BLAST_YIELD.configure(YieldMode.CLAIMABLE, GasMode.CLAIMABLE, msg.sender);
     }
 
     modifier onlyVerifiedGames() {

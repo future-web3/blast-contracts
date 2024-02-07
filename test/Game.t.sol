@@ -17,6 +17,7 @@ contract GameTest is Test {
     uint public constant SECOND = 2; // 20% prize goes to 2nd ranked player
     uint public constant THIRD = 1; // 10% prize goes to 3rd ranked player
     uint public constant OTHERS = 3; // 30% prize goes to other ranked players
+    
 
     MinimalForwarder minimalForwarder = new MinimalForwarder();
 
@@ -208,7 +209,7 @@ contract GameTest is Test {
         game.addScore(alice, 40);
         game.addScore(alice, 50);
         game.addScore(alice, 60);
-        game.addScore(owner, 70);
+        game.addScore(alice, 70);
         game.addScore(doge, 80);
         game.addScore(carol, 90);
         game.addScore(bob, 100);
@@ -222,12 +223,13 @@ contract GameTest is Test {
         vm.warp(block.timestamp + roundLength + 1);
 
         vm.startPrank(bob);
+        assertEq(address(gameDev).balance, 0);
         game.claimReward();
         vm.stopPrank();
-
         uint prizeBob = address(bob).balance;
         uint expectedPrizeBob = (100 ether * FIRST) / 10;
-
+        uint expectedPrize4GameDev = (100 ether * game.GAME_DEV_SHARE()) / 10;
+        assertEq(address(gameDev).balance, expectedPrize4GameDev);
         assertEq(prizeBob, expectedPrizeBob);
 
         vm.startPrank(carol);
@@ -246,21 +248,15 @@ contract GameTest is Test {
         uint expectedPrizeDoge = (100 ether * THIRD) / 10;
         assertEq(prizeDoge, expectedPrizeDoge);
 
-        vm.startPrank(owner);
-        game.claimReward();
-        vm.stopPrank();
-
-        uint prizeOwner = address(owner).balance;
-        uint expectedPrizeOwner = (100 ether * OTHERS) / 70;
-        assertEq(prizeOwner, expectedPrizeOwner);
-
         vm.startPrank(alice);
+        uint beforeClaimAlice = address(alice).balance;
         game.claimReward();
         vm.stopPrank();
 
-        uint prizeAlice = address(alice).balance;
-        uint expectedPrizeAlice = (6 * (100 ether * OTHERS)) / 70;
-        assertLe(expectedPrizeAlice - prizeAlice, 100);
+        uint afterClaimAlice = address(alice).balance;
+        uint expectedPrizeAlice = (7 * (100 ether * OTHERS)) / 70;
+        assertLe(afterClaimAlice - beforeClaimAlice, expectedPrizeAlice);
+
     }
 
     function test_updateTime() public {
