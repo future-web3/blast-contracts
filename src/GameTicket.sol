@@ -15,6 +15,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
     uint256 public constant BRONZE = 1;
     uint256 public constant SILVER = 2;
     uint256 public constant GOLD = 3;
+    uint256 public constant LOTTO_TICKET = 4;
 
     uint256 public ticketPrice = 0.1 ether;
     address[] public verifiedGames;
@@ -27,6 +28,8 @@ contract GameTicket is ERC1155Burnable, Ownable {
         IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
     uint256 public prizePool = 0;
+    
+    mapping(address => uint256) private lottoTickets;
 
     event Redeem(
         address indexed _from,
@@ -63,6 +66,24 @@ contract GameTicket is ERC1155Burnable, Ownable {
         _;
     }
 
+    function claimLottoTicket() external {        
+        uint ticketsNo = lottoTickets[player];
+        require(ticketsNo > 0, "");
+        lottoTickets[player] = 0;
+        
+        _mint(msg.sender, LOTTO_TICKET, ticketsNo, "");
+    }
+
+    function airDropLottoTickets(address[] players, uint[] ticketsNo) external onlyOwner {
+        require(players.length > 0 , "");
+        require(players.length == ticketsNo.length, "");
+        for (uint i = 0; i < players.length; i++)  {
+            address player = players[i];
+            uint tickets = ticketsNo[i];
+            lottoTickets[player] += tickets;
+        }
+    }
+
     function addVerifiedGame(address gameAddress) external onlyOwner {
         require(gameAddress != address(0), "");
         verifiedGames.push(gameAddress);
@@ -86,7 +107,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
-                _ticketType == GOLD,
+                _ticketType == GOLD, 
             "The ticket type is wrong!"
         );
 
