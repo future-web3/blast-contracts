@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Script, console2} from "forge-std/Script.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameLeaderboard.sol";
 import "./MinimalForwarder.sol";
@@ -284,7 +283,7 @@ contract Game is Ownable {
         BLAST_YIELD.configureGovernor(_governor);
     }
 
-    function claimMaxYield(address recipient) external onlyOwner {
+    function claimAllYield(address recipient) external onlyOwner {
         BLAST_YIELD.claimAllYield(address(this), recipient);
     }
 

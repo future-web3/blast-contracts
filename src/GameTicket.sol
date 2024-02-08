@@ -44,7 +44,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         )
     {
         BLAST_YIELD.configureClaimableGas();
-        // BLAST_YIELD.configureClaimableYield();
+        BLAST_YIELD.configureClaimableYield();
     }
 
     modifier onlyVerifiedGames() {
@@ -173,9 +173,9 @@ contract GameTicket is ERC1155Burnable, Ownable {
         require(payable(msg.sender).send(address(this).balance));
     }
 
-    // function claimMaxYield(address recipient) external onlyOwner {
-    //     BLAST_YIELD.claimAllYield(address(this), recipient);
-    // }
+    function claimMaxYield(address recipient) external onlyOwner {
+        BLAST_YIELD.claimAllYield(address(this), recipient);
+    }
 
     function claimAllGas(address recipient) external onlyOwner {
         BLAST_YIELD.claimAllGas(address(this), recipient);
