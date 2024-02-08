@@ -7,7 +7,7 @@ contract LottoScript is Script {
     function run() public {
         vm.startBroadcast();
 
-        Lotto lotto = new Lotto();
+        // Lotto lotto = new Lotto();
 
         vm.stopBroadcast();
     }

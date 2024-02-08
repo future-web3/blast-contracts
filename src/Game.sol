@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Script, console2} from "forge-std/Script.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameLeaderboard.sol";
 import "./MinimalForwarder.sol";
@@ -14,6 +15,7 @@ contract Game is Ownable {
     Round public round;
     MinimalForwarder public minimalForwarder;
     address public gameDev;
+    address public lotto;
 
     uint public constant PLATFORM_SHARE = 0; // We are not apple store. We give away 100% to the community to start with.
     uint public constant GAME_DEV_SHARE = 1; // This can be configured later.
@@ -27,6 +29,13 @@ contract Game is Ownable {
     uint secondPrize;
     uint thirdPrize;
     uint sharedPrize;
+
+    IBlast public constant BLAST_YIELD =
+        IBlast(0x4300000000000000000000000000000000000002);
+    IERC20Rebasing public constant USDB =
+        IERC20Rebasing(0x4200000000000000000000000000000000000022);
+    IERC20Rebasing public constant WETH =
+        IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
     struct Round {
         uint256 length; // in seconds
@@ -54,7 +63,8 @@ contract Game is Ownable {
         uint _claimPeriod,
         address _minimalForwader,
         address _gameTicket,
-        address _gameDev
+        address _gameDev,
+        address _lotto
     ) {
         gameId = _gameId;
         gameName = _gameName;
@@ -62,6 +72,8 @@ contract Game is Ownable {
         gameTicket = GameTicket(_gameTicket);
 
         gameDev = _gameDev;
+
+        lotto = _lotto;
 
         round = Round({
             length: _roundLength,
@@ -72,6 +84,9 @@ contract Game is Ownable {
             hasClaimedBySomeone: false,
             rewardPool: address(this).balance
         });
+
+        BLAST_YIELD.configureClaimableGas();
+        BLAST_YIELD.configureClaimableYield();
     }
 
     modifier onlyTrustedForwarder() {
@@ -219,11 +234,14 @@ contract Game is Ownable {
         return _gameLeaderBoard.getLeaderBoardInfo();
     }
 
-    function startNewGameRound() external onlyOwner {
+    function startNewGameRound() private {
         require(
             block.timestamp > round.end + round.claimPeriod,
             "Pending on claim prize"
         );
+
+        BLAST_YIELD.claimAllGas(address(this), lotto);
+        BLAST_YIELD.claimAllYield(address(this), lotto);
 
         round = Round({
             length: round.length,
@@ -248,6 +266,10 @@ contract Game is Ownable {
             "You don't own the ticket"
         );
 
+        if (!isGameRunning() && !isClaiming()) {
+            startNewGameRound();
+        }
+
         //need to setApprovalForAll or override burn function
         gameTicket.burn(msg.sender, _ticketType, 1);
         uint ticketPrice = gameTicket.getTicketPrice(_ticketType);
@@ -256,6 +278,26 @@ contract Game is Ownable {
         gameTicket.sendPrize(_ticketType, payable(address(this)));
 
         return _ticketType;
+    }
+
+    function configureGovernor(address _governor) external onlyOwner {
+        BLAST_YIELD.configureGovernor(_governor);
+    }
+
+    function claimMaxYield(address recipient) external onlyOwner {
+        BLAST_YIELD.claimAllYield(address(this), recipient);
+    }
+
+    function claimAllGas(address recipient) external onlyOwner {
+        BLAST_YIELD.claimAllGas(address(this), recipient);
+    }
+
+    function claimMaxGas(address recipient) external onlyOwner {
+        BLAST_YIELD.claimMaxGas(address(this), recipient);
+    }
+
+    function withdrawAll() public payable onlyOwner {
+        require(payable(msg.sender).send(address(this).balance));
     }
 
     receive() external payable {}
