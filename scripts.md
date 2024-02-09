@@ -46,4 +46,4 @@ cast call 0x4200000000000000000000000000000000000022 "balanceOf(address)(uint256
 
 cast call 0x4300000000000000000000000000000000000002 "readClaimableYield(address)" 0x52836AEfBcbA55C1a5641aa16fE36Da1A6dff852 --rpc-url https://sepolia.blast.io
 
-cast call 0x4300000000000000000000000000000000000002 "readClaimableYield(address)" 0xA9bbb0b49c4D736B6865963bE86A8f02971bf6C7 --rpc-url https://sepolia.blast.io
+cast call 0x4300000000000000000000000000000000000002 "readClaimableYield(address)" 0xC1BCaA3597a14c7c05334ba9f0C338c3c8a7eA2b --rpc-url https://sepolia.blast.io
