@@ -9,8 +9,9 @@ contract GameScript is Script {
         vm.startBroadcast();
 
         address _minimalForwarder = 0xB6A87320DE35F2bEFE2258162360daa3de11C788;
-        address gameTicket = 0x49c1B82ff813382BbCC3CAc05dc06a5F27DbeEe7;
+        address gameTicket = 0xC88c10CC9A18c713e19BA5807E2659FBb98A893A;
         address gameDeveloper = 0x777BEeF85E717Ab18e44cd054B1a1E33a4A93b83;
+        address lotto = 0xd46807E42528AAe601131235Cea22Cf4fe205A78;
 
         Game game = new Game(
             2,
@@ -19,7 +20,8 @@ contract GameScript is Script {
             86400,
             _minimalForwarder,
             gameTicket,
-            gameDeveloper
+            gameDeveloper,
+            lotto
         );
 
         vm.stopBroadcast();

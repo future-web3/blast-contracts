@@ -28,7 +28,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         IERC20Rebasing(0x4200000000000000000000000000000000000023);
 
     uint256 public prizePool = 0;
-    
+
     mapping(address => uint256) private lottoTickets;
 
     event Redeem(
@@ -43,14 +43,8 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "https://cryptoleek-team.github.io/data-data/flappybird/tickets/1.json"
         )
     {
-        // BLAST_YIELD.configureAutomaticYield();
-        // BLAST_YIELD.configureClaimableGas(); // Gas is claimable
-        // BLAST_YIELD.configureGovernor(msg.sender);
-        // BLAST_YIELD.configure(
-        //     YieldMode.CLAIMABLE,
-        //     GasMode.CLAIMABLE,
-        //     msg.sender
-        // );
+        BLAST_YIELD.configureClaimableGas();
+        BLAST_YIELD.configureClaimableYield();
     }
 
     modifier onlyVerifiedGames() {
@@ -66,20 +60,23 @@ contract GameTicket is ERC1155Burnable, Ownable {
         _;
     }
 
-    function claimLottoTicket() external {        
-        uint ticketsNo = lottoTickets[player];
-        require(ticketsNo > 0, "");
+    function claimLottoTicket(address player) external {
+        uint numberOfTickets = lottoTickets[player];
+        require(numberOfTickets > 0, "");
         lottoTickets[player] = 0;
-        
-        _mint(msg.sender, LOTTO_TICKET, ticketsNo, "");
+
+        _mint(msg.sender, LOTTO_TICKET, numberOfTickets, "");
     }
 
-    function airDropLottoTickets(address[] players, uint[] ticketsNo) external onlyOwner {
-        require(players.length > 0 , "");
-        require(players.length == ticketsNo.length, "");
-        for (uint i = 0; i < players.length; i++)  {
+    function airDropLottoTickets(
+        address[] memory players,
+        uint[] memory numberOfTickets
+    ) external onlyOwner {
+        require(players.length > 0, "");
+        require(players.length == numberOfTickets.length, "");
+        for (uint i = 0; i < players.length; i++) {
             address player = players[i];
-            uint tickets = ticketsNo[i];
+            uint tickets = numberOfTickets[i];
             lottoTickets[player] += tickets;
         }
     }
@@ -107,7 +104,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
         require(
             _ticketType == BRONZE ||
                 _ticketType == SILVER ||
-                _ticketType == GOLD, 
+                _ticketType == GOLD,
             "The ticket type is wrong!"
         );
 
@@ -176,28 +173,15 @@ contract GameTicket is ERC1155Burnable, Ownable {
         require(payable(msg.sender).send(address(this).balance));
     }
 
-    // function claimYield(address recipient, uint256 amount) external {
-    //     //This function is public meaning anyone can claim the yield
-    //     BLAST_YIELD.claimYield(address(this), recipient, amount);
-    // }
+    function claimMaxYield(address recipient) external onlyOwner {
+        BLAST_YIELD.claimAllYield(address(this), recipient);
+    }
 
-    // function claimAllYield(address recipient) external {
-    //     BLAST_YIELD.claimAllYield(address(this), recipient);
-    // }
+    function claimAllGas(address recipient) external onlyOwner {
+        BLAST_YIELD.claimAllGas(address(this), recipient);
+    }
 
-    // function claimAllGas(address recipient) external {
-    //     BLAST_YIELD.claimAllGas(address(this), recipient);
-    // }
-
-    // function updatePrizePool() public onlyOwner {
-    //     uint256 gasClaimed = BLAST_YIELD.claimAllGas(
-    //         address(this),
-    //         address(this)
-    //     );
-    //     uint256 yieldClaimed = BLAST_YIELD.claimAllYield(
-    //         address(this),
-    //         address(this)
-    //     );
-    //     prizePool += gasClaimed + yieldClaimed;
-    // }
+    function configureGovernor(address _governor) external onlyOwner {
+        BLAST_YIELD.configureGovernor(_governor);
+    }
 }

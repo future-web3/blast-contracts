@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./entropy_sdk/IEntropy.sol";
+import "./GameTicket.sol";
 
 // https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/examples/coin_flip/contract/src/CoinFlip.sol
 
@@ -21,12 +22,10 @@ contract Lotto is Ownable {
 
     mapping(uint64 => address) private requestedFlips;
     mapping(address => uint256) private userToSequenceNumber;
-    mapping(address => uint256) private userToFinalRandomNumber;
 
     event RandomnessRequested(uint64 sequenceNumber, address requester);
     event RandomnessRevealed(uint256 randomNumber, address revealer);
     event Winner(address indexed winner, uint amount);
-
 
     constructor(address _gameTicket) {
         gameTicket = GameTicket(_gameTicket);
@@ -34,7 +33,8 @@ contract Lotto is Ownable {
 
     function participate(uint noOfTickets) external {
         require(
-            gameTicket.balanceOf(msg.sender, gameTicket.LOTTO_TICKET()) >= noOfTickets,
+            gameTicket.balanceOf(msg.sender, gameTicket.LOTTO_TICKET()) >=
+                noOfTickets,
             "You don't own the ticket"
         );
 
@@ -43,7 +43,6 @@ contract Lotto is Ownable {
         for (uint i = 0; i < noOfTickets; i++) {
             participants.push(msg.sender);
         }
-
     }
 
     function revealResult(
@@ -69,10 +68,10 @@ contract Lotto is Ownable {
         lastWinner = participants[participantIdx];
         require(lastWinner != address(0), "No winner found");
 
-        if (participantIdx != length-1) {
-            participants[participantIdx] = participants[length - 1];            
+        if (participantIdx != length - 1) {
+            participants[participantIdx] = participants[length - 1];
         }
-        
+
         participants.pop();
 
         (bool success, ) = lastWinner.call{value: winningAmount}("");
@@ -104,24 +103,9 @@ contract Lotto is Ownable {
         return userToSequenceNumber[user];
     }
 
-    function getFinalResultsByUser(
-        address user
-    ) public view returns (uint256, bool) {
-        return (
-            userToFinalRandomNumber[user],
-            userToFinalRandomNumber[user] == winningNumber
-        );
-    }
-
     function getFee() public view returns (uint256 fee) {
         fee = entropy.getFee(ENTROPY_DEFAULT_PROVIDER);
     }
 
-    function setNumberRange(uint256 _numberRange) external onlyOwner {
-        numberRange = _numberRange;
-    }
-
-    function setWinningNumber(uint256 _winningNumber) external onlyOwner {
-        winningNumber = _winningNumber;
-    }
+    receive() external payable {}
 }
