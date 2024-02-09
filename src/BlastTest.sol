@@ -5,7 +5,7 @@ import "./IERC20Rebasing.sol";
 
 pragma solidity ^0.8.0;
 
-contract MyContract {
+contract BlastTest {
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
     IERC20Rebasing public constant WETH = IERC20Rebasing(0x4200000000000000000000000000000000000023);

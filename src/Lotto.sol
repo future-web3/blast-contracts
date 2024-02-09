@@ -14,7 +14,7 @@ contract Lotto is Ownable {
     address public constant ENTROPY_DEFAULT_PROVIDER =
         0x6CC14824Ea2918f5De5C2f75A9Da968ad4BD6344;
 
-    address[] participants;
+    address[] public participants;
     GameTicket public gameTicket;
     address public lastWinner;
 
@@ -26,6 +26,7 @@ contract Lotto is Ownable {
     event RandomnessRequested(uint64 sequenceNumber, address requester);
     event RandomnessRevealed(uint256 randomNumber, address revealer);
     event Winner(address indexed winner, uint amount);
+    event EnterLottoGame(address indexed participant, uint number);
 
     constructor(address _gameTicket) {
         gameTicket = GameTicket(_gameTicket);
@@ -43,6 +44,8 @@ contract Lotto is Ownable {
         for (uint i = 0; i < noOfTickets; i++) {
             participants.push(msg.sender);
         }
+
+        emit EnterLottoGame(msg.sender, noOfTickets);
     }
 
     function revealResult(

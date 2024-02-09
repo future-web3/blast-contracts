@@ -31,12 +31,9 @@ contract GameTicket is ERC1155Burnable, Ownable {
 
     mapping(address => uint256) private lottoTickets;
 
-    event Redeem(
-        address indexed _from,
-        uint _id,
-        uint burntAmt,
-        uint noOfLives
-    );
+    event BuyTicket(address indexed buyer, uint ticketType, uint ticketNumber, uint amount);
+    event AirdropLottoTickets(address[] players, uint[] numberOfTickets);
+    event ClaimLottoTicket(address indexed claimer, uint ticketType, uint number);
 
     constructor()
         ERC1155(
@@ -45,6 +42,7 @@ contract GameTicket is ERC1155Burnable, Ownable {
     {
         BLAST_YIELD.configureClaimableGas();
         BLAST_YIELD.configureClaimableYield();
+        BLAST_YIELD.configureGovernor(address(this));
     }
 
     modifier onlyVerifiedGames() {
@@ -66,6 +64,8 @@ contract GameTicket is ERC1155Burnable, Ownable {
         lottoTickets[player] = 0;
 
         _mint(msg.sender, LOTTO_TICKET, numberOfTickets, "");
+
+        emit ClaimLottoTicket(msg.sender, LOTTO_TICKET, numberOfTickets);
     }
 
     function airDropLottoTickets(
@@ -79,11 +79,13 @@ contract GameTicket is ERC1155Burnable, Ownable {
             uint tickets = numberOfTickets[i];
             lottoTickets[player] += tickets;
         }
+
+        emit AirdropLottoTickets(players, numberOfTickets);
     }
 
     function addVerifiedGame(address gameAddress) external onlyOwner {
         require(gameAddress != address(0), "");
-        verifiedGames.push(gameAddress);
+        verifiedGames.push(gameAddress);        
     }
 
     function deleteVerifiedGame(address gameAddress) external onlyOwner {
@@ -113,19 +115,8 @@ contract GameTicket is ERC1155Burnable, Ownable {
             "You dont have enough funds"
         );
         _mint(msg.sender, _ticketType, _number, "");
-    }
 
-    function redeemTicket(uint256 _ticketType) external returns (uint8) {
-        require(
-            _ticketType == BRONZE ||
-                _ticketType == SILVER ||
-                _ticketType == GOLD,
-            "The ticket type is wrong!"
-        );
-        burn(msg.sender, _ticketType, 1);
-
-        emit Redeem(msg.sender, _ticketType, 1, getNumberOfLives(_ticketType));
-        return getNumberOfLives(_ticketType);
+        emit BuyTicket(msg.sender, _ticketType, _number, msg.value);
     }
 
     function getTicketPrice(uint256 _ticketType) public view returns (uint) {
@@ -183,5 +174,9 @@ contract GameTicket is ERC1155Burnable, Ownable {
 
     function configureGovernor(address _governor) external onlyOwner {
         BLAST_YIELD.configureGovernor(_governor);
+    }
+
+    function getLottoTickets(address user) view public returns(uint) {
+        return lottoTickets[user];
     }
 }

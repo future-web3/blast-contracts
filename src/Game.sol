@@ -47,12 +47,35 @@ contract Game is Ownable {
     }
 
     event ScoreUpdated(
-        Round round,
+        address indexed user,
         uint gameId,
+        Round round,
         string gameName,
         GameLeaderboard.User[] gameLeaderboardInfo,
-        address user,
         uint score
+    );
+
+    event ClaimReward (
+        address indexed user,
+        uint totalClaimedPrize,
+        Round round,
+        uint _gameId,
+        string _gameName
+    );
+
+    event NewRound (
+        uint indexed gameId, 
+        string gameName, 
+        Round round
+    );
+
+    event RedeemTicket(
+        address indexed player, 
+        uint _ticketType, 
+        uint ticketPrice, 
+        uint gameId, 
+        string gameName, 
+        Round round
     );
 
     constructor(
@@ -86,6 +109,7 @@ contract Game is Ownable {
 
         BLAST_YIELD.configureClaimableGas();
         BLAST_YIELD.configureClaimableYield();
+        BLAST_YIELD.configureGovernor(address(this));
     }
 
     modifier onlyTrustedForwarder() {
@@ -96,6 +120,9 @@ contract Game is Ownable {
         _;
     }
 
+    /**
+     * Helper functions to update game period and endTime  
+     */
     function updateGamePeriodAndEndTime(uint length) external onlyOwner {
         round = Round({
             length: length,
@@ -108,6 +135,9 @@ contract Game is Ownable {
         });
     }
 
+    /**
+     * Helper functions to update claim period
+     */
     function updateClaimPeriod(uint newClaimPeriod) external onlyOwner {
         round = Round({
             length: round.length,
@@ -120,6 +150,9 @@ contract Game is Ownable {
         });
     }
 
+    /**
+     * This function should only be called from trusted backend and trusted forwarder address
+     */
     function addScore(address user, uint score) external onlyTrustedForwarder {
         require(isGameRunning(), "Game is not running");
 
@@ -130,15 +163,18 @@ contract Game is Ownable {
             .getLeaderBoardInfo();
 
         emit ScoreUpdated(
-            round,
+            user,
             gameId,
+            round,
             gameName,
             _gameLeaderboardInfo,
-            user,
             score
         );
     }
 
+    /**
+     * The user can claim game prize if they are top 10 players
+     */
     function claimReward() external {
         require(isClaiming(), "It is not in the claim prize period");
 
@@ -146,20 +182,23 @@ contract Game is Ownable {
 
         uint leaderBoardLength = _gameLeaderBoard.leaderboardLength();
 
-        uint256 totalBalance;
-
+        uint256 totalBalance = address(this).balance;
+        uint totalClaimedPrize = 0;
         if (!round.hasClaimedBySomeone) {
-            totalBalance = address(this).balance;
             gameDevPrize = (totalBalance * GAME_DEV_SHARE) / 10;
             firstPrize = (totalBalance * FIRST) / 10;
             secondPrize = (totalBalance * SECOND) / 10;
             thirdPrize = (totalBalance * THIRD) / 10;
             sharedPrize = (totalBalance * OTHERS) / (10 * 7);
+            totalClaimedPrize += gameDevPrize;
             (bool sent, ) = gameDev.call{value: gameDevPrize}(""); // send to gamedev money
             require(sent, "Failed to send Ether");
             round.hasClaimedBySomeone = true;
+
+            emit ClaimReward(gameDev, totalClaimedPrize, getCurrentGameRound(), gameId, gameName);
         }
 
+        
         for (uint i = 0; i < leaderBoardLength; i++) {
             GameLeaderboard.User memory currentUser = _gameLeaderBoard.getUser(
                 i
@@ -173,18 +212,22 @@ contract Game is Ownable {
 
                 if (i == 0) {
                     // 1st player
+                    totalClaimedPrize += firstPrize;
                     (bool sent, ) = msg.sender.call{value: firstPrize}("");
                     require(sent, "Failed to send Ether");
                 } else if (i == 1) {
                     // 2nd player
+                    totalClaimedPrize += secondPrize;
                     (bool sent, ) = msg.sender.call{value: secondPrize}("");
                     require(sent, "Failed to send Ether");
                 } else if (i == 2) {
                     // third player
+                    totalClaimedPrize += thirdPrize;
                     (bool sent, ) = msg.sender.call{value: thirdPrize}("");
                     require(sent, "Failed to send Ether");
                 } else {
                     // others
+                    totalClaimedPrize += sharedPrize;
                     (bool sent, ) = msg.sender.call{value: sharedPrize}("");
                     require(sent, "Failed to send Ether");
                 }
@@ -192,6 +235,8 @@ contract Game is Ownable {
                 currentUser.prizeClaimed = true;
             }
         }
+
+        emit ClaimReward(msg.sender, totalClaimedPrize, getCurrentGameRound(), gameId, gameName);
     }
 
     function isGameRunning() public view returns (bool) {
@@ -251,6 +296,8 @@ contract Game is Ownable {
             hasClaimedBySomeone: false,
             rewardPool: address(this).balance
         });
+
+        emit NewRound(gameId, gameName, round);
     }
 
     function redeemTicket(uint8 _ticketType) external returns (uint8) {
@@ -275,6 +322,8 @@ contract Game is Ownable {
         round.rewardPool += ticketPrice;
 
         gameTicket.sendPrize(_ticketType, payable(address(this)));
+
+        emit RedeemTicket(msg.sender, _ticketType, ticketPrice, gameId, gameName, round);
 
         return _ticketType;
     }
