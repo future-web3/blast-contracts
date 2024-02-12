@@ -18,3 +18,5 @@ docs/
 .env
 
 node_modules/
+
+scripts.md
