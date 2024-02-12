@@ -45,5 +45,6 @@ cast send --rpc-url=https://rpc.sepolia.org \
 cast call 0x4200000000000000000000000000000000000022 "balanceOf(address)(uint256)" 0x777BEeF85E717Ab18e44cd054B1a1E33a4A93b83 --rpc-url https://sepolia.blast.io
 
 ### Get Yield Balance from GameTicket.sol on blast sepolia
+
 cast call 0x4300000000000000000000000000000000000002 "readClaimableYield(address)" 0x52836AEfBcbA55C1a5641aa16fE36Da1A6dff852 --rpc-url https://sepolia.blast.io
 cast call 0x4300000000000000000000000000000000000002 "readGasParams(address)" 0x52836AEfBcbA55C1a5641aa16fE36Da1A6dff852 --rpc-url https://sepolia.blast.io
