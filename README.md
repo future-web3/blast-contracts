@@ -1,4 +1,15 @@
-# blast-contracts
+# Blasteens contracts
+## Blasteens contracts features:
+ - Utilised all the blast l2 features including yield claim, gas claim etc.
+ - Utilised pyth VRF to get randomness for Lotto Draw.
+ - Utilised various of other solidity patterns such as factory etc..
+
+## Blasteens tech stack
+ - Blast yield mechanism.
+ - Blast gas mechanism.
+ - Pyth VRF.
+ - Subgraph on blast.
+ - Foundry as the dev framework.
 
 ## Contract addresses:
 ```javascript
@@ -14,18 +25,8 @@ lottoContract: '0xe1087eaE2147563d06f8870469bC022C94233f72',
 
 ```
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+## How to contribute
+We warmly invite developers of all skill levels to contribute to our open-source project, whether through code, documentation, or community support, to help us build something truly amazing together
 
 ## Usage
 
