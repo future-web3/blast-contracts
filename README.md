@@ -1,7 +1,7 @@
 # blast-contracts
 
 ## Contract addresses:
-```code
+```javascript
 gameTicketContract: '0x3c1F70e4af2E1693e89Bed7B24f497d8b0b0dB43',
 gameContract: {
       escapeFromGerms: '0xdC29E420FbaF9c273d84B5a6548a7936a7ccdb9e',
