@@ -15,7 +15,7 @@ The Blasteens Contracts upholds fairness within the community, with its transpar
 * [Features](#features)
 * [Tech Stack](#tech-stack)
 * [Contract Addresses](#contract-addresses)
-* [How to Contribute?](#how-to-contribute)
+* [How to contribute?](#how-to-contribute)
 * [License](#license)
 * [Developed By](#developed-by)
 
@@ -45,7 +45,7 @@ lottoContract: '0xe1087eaE2147563d06f8870469bC022C94233f72',
 
 ```
 
-## How to contribute
+## How to contribute?
 We warmly invite developers of all skill levels to contribute to our open-source project, whether through code, documentation, or community support, to help us build something truly amazing together.
 
 ## License
