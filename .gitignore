@@ -20,3 +20,5 @@ docs/
 node_modules/
 
 scripts.md
+.DS_Store
+.DS_Store
